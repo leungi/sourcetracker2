@@ -3,26 +3,29 @@
 sudo: false
 language: python
 env:
-  - PYTHON_VERSION=3.5
+  - PYVERSION=3.5 USE_CYTHON=TRUE MAKE_DOC=TRUE
 before_install:
-  - export MPLBACKEND='Agg'
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda3/bin:$PATH
+  - conda update --yes conda
+  - conda info -a
 install:
-  - conda create --yes -n st2 -c biocore python=$PYTHON_VERSION nose numpy scipy h5py flake8 scikit-bio seaborn
-  - source activate st2
-  - pip install coveralls
-  - pip install .
+  - wget -q https://raw.githubusercontent.com/qiime2/environment-files/master/latest/staging/qiime2-latest-py36-linux-conda.yml
+  - conda env create -q -n test-env --file qiime2-latest-py36-linux-conda.yml
+  - conda install --yes -n test-env --file ci/conda_requirements.txt -c biocore
+  - conda install --yes -n test-env cython
+  - source activate test-env
+  - pip install -r ci/pip_requirements.txt
+  - pip install numpy
+  - pip install -e .
+  - sudo pip install flake8
+  - sudo pip install nose
+  - sudo pip install coveralls
 script:
-  - nosetests --with-coverage
+  - source activate test-env
   - flake8 sourcetracker setup.py
-  - sourcetracker2 gibbs --help
-  - sourcetracker2 gibbs -i data/tiny-test/otu_table.biom -m data/tiny-test/map.txt -o example1/ --restarts 2 --draws_per_restart 3 --burnin 10 --delay 2
-  - sourcetracker2 gibbs -i data/tiny-test/otu_table.biom -m data/tiny-test/alt-map.txt -o example2/ --source_sink_column source-or-sink --source_column_value src --sink_column_value snk --source_category_column sample-type --restarts 2 --draws_per_restart 3 --burnin 10 --delay 2
-  - sourcetracker2 gibbs -i data/tiny-test/otu_table.biom -m data/tiny-test/map.txt  --loo -o example3/ --restarts 2 --draws_per_restart 3 --burnin 10 --delay 2
-  - sourcetracker2 gibbs -i data/tiny-test/otu_table.biom -m data/tiny-test/map.txt  -o example4/ --burnin 25 --restarts 2 --draws_per_restart 3 --delay 2
-  - sourcetracker2 gibbs -i data/tiny-test/otu_table.biom -m data/tiny-test/map.txt  -o example5/ --sink_rarefaction_depth 1700 --source_rarefaction_depth 1500 --restarts 2 --draws_per_restart 3 --burnin 10 --delay 2
+  - nosetests -v sourcetracker sourcetracker/* --with-coverage --cover-package=sourcetracker
 after_success:
   - coveralls
