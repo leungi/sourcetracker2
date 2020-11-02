@@ -8,8 +8,9 @@
 # ----------------------------------------------------------------------------
 
 from ._compare import compare_sinks, compare_sink_metrics
-from ._sourcetracker import gibbs
+from ._sourcetracker import gibbs, collapse_source_data, subsample_dataframe, validate_gibbs_input
 from ._plot import plot_heatmap
+from ._gibbs import gibbs_helper
 
 
 __version__ = '2.0.1-dev'
